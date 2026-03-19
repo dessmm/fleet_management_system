@@ -15,7 +15,7 @@ class FuelRecordController extends Controller
 
     public function create()
     {
-        return view('fuel_records.form');
+        return view('fuel_records_create');
     }
 
     public function store(Request $request)
@@ -51,7 +51,7 @@ class FuelRecordController extends Controller
             'date' => 'required|date',
         ]));
 
-        return redirect()->route('fuel_records.index');
+        return redirect()->route('fuel_records_index');
     }
 
     public function destroy(FuelRecord $fuel_record)

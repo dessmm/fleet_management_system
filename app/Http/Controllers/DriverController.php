@@ -15,7 +15,7 @@ class DriverController extends Controller
 
     public function create()
     {
-        return view('drivers.form');
+        return view('drivers_create');
     }
 
     public function store(Request $request)
@@ -27,7 +27,7 @@ class DriverController extends Controller
             'status' => 'required',
         ]));
 
-        return redirect()->route('drivers.index');
+        return redirect()->route('drivers_create');
     }
 
     public function show(Driver $driver)
@@ -48,7 +48,7 @@ class DriverController extends Controller
             'contact' => 'required',
             'status' => 'required',
         ]));
-
+    
         return redirect()->route('drivers.index');
     }
 

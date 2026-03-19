@@ -1,3 +1,6 @@
+@extends('app')
+
+@section('content')
 <form action="{{ isset($vehicle) ? route('vehicles.update', $vehicle->id) : route('vehicles.store') }}" method="POST">
     @csrf
     @if(isset($vehicle))

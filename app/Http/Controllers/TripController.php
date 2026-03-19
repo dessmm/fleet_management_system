@@ -15,7 +15,7 @@ class TripController extends Controller
 
     public function create()
     {
-        return view('trips.form');
+        return view('trips_create');
     }
 
     public function store(Request $request)
@@ -31,7 +31,7 @@ class TripController extends Controller
             'status' => 'required',
         ]));
 
-        return redirect()->route('trips.index');
+        return redirect()->route('trips_create');
     }
 
     public function show(Trip $trip)

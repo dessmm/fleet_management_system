@@ -15,7 +15,7 @@ class MaintenanceRecordController extends Controller
 
     public function create()
     {
-        return view('maintenance_records.form');
+        return view('maintenance_create');
     }
 
     public function store(Request $request)
@@ -28,7 +28,7 @@ class MaintenanceRecordController extends Controller
             'technician_name' => 'required',
         ]));
 
-        return redirect()->route('maintenance_records.index');
+        return redirect()->route('maintenance_create');
     }
 
     public function show(MaintenanceRecord $maintenance_record)
