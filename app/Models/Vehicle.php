@@ -24,4 +24,11 @@ class Vehicle extends Model
         return $this->hasMany(Assignments::class);
     }
 
+    public function trafficData() {
+        return $this->hasMany(TrafficData::class);
+    }
+
+    public function locationLogs() {
+        return $this->hasMany(LocationLog::class);
+    }
 }

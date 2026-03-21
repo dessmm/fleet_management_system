@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MaintenanceRecord;
+use App\Models\Vehicle;
 
 class MaintenanceRecordController extends Controller
 {
@@ -15,7 +16,8 @@ class MaintenanceRecordController extends Controller
 
     public function create()
     {
-        return view('maintenance_create');
+        $vehicles = \App\Models\Vehicle::all();
+        return view('maintenance_create', compact('vehicles'));
     }
 
     public function store(Request $request)
@@ -28,17 +30,18 @@ class MaintenanceRecordController extends Controller
             'technician_name' => 'required',
         ]));
 
-        return redirect()->route('maintenance_create');
+        return redirect()->route('maintenance_records.index');
     }
 
     public function show(MaintenanceRecord $maintenance_record)
     {
-        return view('maintenance_records.show', compact('maintenance_record'));
+        return view('maintenance_show', compact('maintenance_record'));
     }
 
     public function edit(MaintenanceRecord $maintenance_record)
     {
-        return view('maintenance_records.form', compact('maintenance_record'));
+        $vehicles = Vehicle::all();
+        return view('maintenance_form', compact('maintenance_record', 'vehicles'));
     }
 
     public function update(Request $request, MaintenanceRecord $maintenance_record){

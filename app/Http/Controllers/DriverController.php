@@ -23,21 +23,22 @@ class DriverController extends Controller
         Driver::create($request->validate([
             'name' => 'required',
             'license_number' => 'required|unique:drivers',
+            'license_expiry_date' => 'nullable|date',
             'contact' => 'required',
             'status' => 'required',
         ]));
 
-        return redirect()->route('drivers_create');
+        return redirect()->route('drivers.index');
     }
 
     public function show(Driver $driver)
     {
-        return view('drivers.show', compact('driver'));
+        return view('drivers_show', compact('driver'));
     }
 
     public function edit(Driver $driver)
     {
-        return view('drivers.form', compact('driver'));
+        return view('drivers_form', compact('driver'));
     }
 
     public function update(Request $request, Driver $driver)
@@ -45,6 +46,7 @@ class DriverController extends Controller
         $driver->update($request->validate([
             'name' => 'required',
             'license_number' => 'required|unique:drivers,license_number,' . $driver->id,
+            'license_expiry_date' => 'nullable|date',
             'contact' => 'required',
             'status' => 'required',
         ]));

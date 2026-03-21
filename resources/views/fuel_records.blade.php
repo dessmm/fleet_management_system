@@ -1,41 +1,100 @@
-@extends('app') 
+@extends('app')
 
 @section('content')
-<h1>Fuel Records</h1>
-<a href="{{ route('fuel_records.create') }}">Add New Fuel Record</a>
-<table border="1" cellpadding="5" cellspacing="0">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Vehicle</th>
-            <th>Fuel Type</th>
-            <th>Quantity</th>
-            <th>Cost</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($fuel_records as $record)
-        <tr>
-            <td>{{ $record->id }}</td>
-            <td>{{ $record->vehicle->plate_number ?? 'N/A' }}</td>
-            <td>{{ $record->fuel_type }}</td>
-            <td>{{ $record->quantity }}</td>
-            <td>{{ $record->cost }}</td>
-            <td>{{ $record->date }}</td>
-            <td>
-                <a href="{{ route('fuel_records.show', $record->id) }}">View</a> |
-                <a href="{{ route('fuel_records.edit', $record->id) }}">Edit</a> |
-                <form action="{{ route('fuel_records.destroy', $record->id) }}" method="POST" style="display:inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" onclick="return confirm('Delete this fuel record?')">Delete</button>
-                </form>
-            </td>
-        </tr>
-        @endforeach
-    </tbody>
-</table>
+<style>
+    .fuel-row { transition: background-color .15s ease, transform .15s ease; }
+    .fuel-row:hover { background-color: #fff7ed !important; transform: translateX(2px); }
+    .action-btn { transition: all .2s ease; }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.14); }
+</style>
 
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100 px-4 py-8 md:px-8">
+    <div class="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-600 to-orange-700 flex items-center justify-center shadow-lg shadow-orange-200 flex-shrink-0 text-white text-xl">⛽</div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">Fuel Records</h1>
+                <p class="text-gray-500 text-sm mt-0.5">Track fuel refills, costs, and consumption</p>
+            </div>
+        </div>
+        <a href="{{ route('fuel_records.create') }}" class="action-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-orange-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-orange-200 hover:shadow-lg hover:shadow-orange-300 hover:-translate-y-0.5 self-start sm:self-auto">
+            ⛽ Add Record
+        </a>
+    </div>
+
+    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-sm font-semibold text-gray-700">Fuel History</span>
+            <span class="ml-1 px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 rounded-full">{{ count($fuel_records) }}</span>
+        </div>
+
+        @if(count($fuel_records) > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Record</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vehicle</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fuel Type</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price/L</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Cost</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Gas Station</th>
+                            <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($fuel_records as $record)
+                            <tr class="fuel-row">
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-lg">#{{ str_pad($record->id, 4, '0', STR_PAD_LEFT) }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm font-semibold text-gray-900">{{ $record->vehicle->plate_number ?? 'N/A' }}</p>
+                                    <p class="text-xs text-gray-500">{{ $record->vehicle->make ?? 'N/A' }} {{ $record->vehicle->model ?? '' }}</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-lg border border-amber-100">{{ $record->fuel_type }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($record->quantity, 2) }} L</td>
+                                <td class="px-6 py-4 text-sm text-gray-900">₱{{ number_format($record->price_per_liter, 2) }}</td>
+                                <td class="px-6 py-4 text-sm font-bold text-gray-900">₱{{ number_format($record->cost, 2) }}</td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</p>
+                                    <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($record->date)->diffForHumans() }}</p>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ $record->gas_station ?? '—' }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <a href="{{ route('fuel_records.show', $record->id) }}" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+    View
+</a>
+                                        <a href="{{ route('fuel_records.edit', $record->id) }}" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg">Edit</a>
+                                        <form action="{{ route('fuel_records.destroy', $record->id) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" onclick="return confirm('Delete this record?')" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div class="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-5 text-3xl">⛽</div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">No fuel records found</h3>
+                <p class="text-gray-400 text-sm mb-6 max-w-xs">Start tracking fuel activity by adding your first record.</p>
+                <a href="{{ route('fuel_records.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-orange-700 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Add First Record</a>
+            </div>
+        @endif
+    </div>
+</div>
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trip;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 
 class TripController extends Controller
@@ -15,50 +16,123 @@ class TripController extends Controller
 
     public function create()
     {
-        return view('trips_create');
+        $vehicles = \App\Models\Vehicle::all();
+        $drivers = \App\Models\Driver::all();
+        return view('trips_create', compact('vehicles', 'drivers'));
     }
 
     public function store(Request $request)
     {
-        Trip::create($request->validate([
+        $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'driver_id' => 'required|exists:drivers,id',
             'start_location' => 'required',
             'end_location' => 'required',
-            'start_time' => 'required|date_format:Y-m-d H:i:s',
-            'end_time' => 'nullable|date_format:Y-m-d H:i:s',
+            'start_time' => 'required|date_format:Y-m-d\TH:i',
+            'end_time' => 'nullable|date_format:Y-m-d\TH:i',
             'distance' => 'nullable|integer',
             'status' => 'required',
-        ]));
+        ]);
 
-        return redirect()->route('trips_create');
+        // Convert datetime-local format (YYYY-MM-DDTHH:mm) to Y-m-d H:i:s
+        if (!empty($validated['start_time'])) {
+            $validated['start_time'] = str_replace('T', ' ', $validated['start_time']) . ':00';
+        }
+        if (!empty($validated['end_time'])) {
+            $validated['end_time'] = str_replace('T', ' ', $validated['end_time']) . ':00';
+        }
+
+        // Create the trip
+        $trip = Trip::create($validated);
+
+        // Update the assigned vehicle status to active
+        $vehicle = Vehicle::find($validated['vehicle_id']);
+        if ($vehicle) {
+            $vehicle->update(['status' => 'active']);
+        }
+
+        return redirect()->route('trips.index');
     }
 
     public function show(Trip $trip)
     {
-        return view('trips.show', compact('trip'));
+        return view('trips_show', compact('trip'));
     }
 
     public function edit(Trip $trip)
     {
-        return view('trips.form', compact('trip'));
+        $vehicles = \App\Models\Vehicle::all();
+        $drivers = \App\Models\Driver::all();
+        return view('trips.form', compact('trip', 'vehicles', 'drivers'));
     }
 
     public function update(Request $request, Trip $trip)
     {
-        $trip->update($request->validate([
+        $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'driver_id' => 'required|exists:drivers,id',
             'start_location' => 'required',
             'end_location' => 'required',
-            'start_time' => 'required|date_format:Y-m-d H:i:s',
-            'end_time' => 'nullable|date_format:Y-m-d H:i:s',
+            'start_time' => 'required|date_format:Y-m-d\TH:i',
+            'end_time' => 'nullable|date_format:Y-m-d\TH:i',
             'distance' => 'nullable|integer',
             'status' => 'required',
-        ]));
+        ]);
+
+        // Convert datetime-local format (YYYY-MM-DDTHH:mm) to Y-m-d H:i:s
+        if (!empty($validated['start_time'])) {
+            $validated['start_time'] = str_replace('T', ' ', $validated['start_time']) . ':00';
+        }
+        if (!empty($validated['end_time'])) {
+            $validated['end_time'] = str_replace('T', ' ', $validated['end_time']) . ':00';
+        }
+
+        // Update the trip
+        $trip->update($validated);
+
+        // Update the assigned vehicle status to active
+        $vehicle = Vehicle::find($validated['vehicle_id']);
+        if ($vehicle) {
+            $vehicle->update(['status' => 'active']);
+        }
 
         return redirect()->route('trips.index');
     }
+    
+    public function updateStatus(Request $request, Trip $trip)
+{
+    $validated = $request->validate([
+        'status' => 'required|in:pending,in_progress,completed',
+    ]);
+ 
+    $newStatus = $validated['status'];
+    $data      = ['status' => $newStatus];
+ 
+    // Auto-set timestamps based on status
+    if ($newStatus === 'in_progress' && !$trip->start_time) {
+        $data['start_time'] = now();
+    }
+ 
+    if ($newStatus === 'completed') {
+        $data['end_time'] = now();
+    }
+ 
+    // Prevent going backwards (completed → pending etc.)
+    $order = ['pending' => 0, 'in_progress' => 1, 'completed' => 2];
+    if ($order[$newStatus] < $order[$trip->status]) {
+        return back()->with('error', 'Cannot revert a trip to a previous status.');
+    }
+ 
+    $trip->update($data);
+ 
+    $messages = [
+        'in_progress' => 'Trip has started! Safe travels.',
+        'completed'   => 'Trip marked as completed.',
+        'pending'     => 'Trip status updated.',
+    ];
+ 
+    return back()->with('success', $messages[$newStatus]);
+}
 
     public function destroy(Trip $trip)
     {

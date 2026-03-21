@@ -6,25 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('fuel_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
             $table->string('fuel_type');
-            $table->decimal('quantity', 8, 2); 
+            $table->decimal('quantity', 8, 2);
+            $table->decimal('price_per_liter', 8, 2)->nullable();
             $table->decimal('cost', 10, 2);
+            $table->integer('odometer')->nullable();
+            $table->string('gas_station')->nullable();
+            $table->text('notes')->nullable();
             $table->date('date');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('fuel_records');
