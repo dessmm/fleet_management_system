@@ -16,8 +16,12 @@ Route::resource('vehicles', VehicleController::class);
 Route::resource('drivers', DriverController::class);
 Route::resource('trips', TripController::class);
 Route::patch('/trips/{trip}/status', [TripController::class, 'updateStatus'])->name('trips.update-status');
+Route::get('/trips/{trip}/pdf', [TripController::class, 'exportPdf'])->name('trips.pdf');
 Route::resource('maintenance_records', MaintenanceRecordController::class);
+Route::get('/maintenance_records/{maintenance_record}/pdf', [MaintenanceRecordController::class, 'exportPdf'])->name('maintenance_records.pdf');
+Route::patch('/maintenance_records/{maintenance_record}/complete', [MaintenanceRecordController::class, 'markComplete'])->name('maintenance_records.complete');
 Route::resource('fuel_records', FuelRecordController::class);
+Route::get('/fuel_records/{fuel_record}/pdf', [FuelRecordController::class, 'exportPdf'])->name('fuel_records.pdf');
 Route::resource('assignments', AssignmentController::class);
 
 Route::prefix('traffic')->name('traffic.')->group(function () {

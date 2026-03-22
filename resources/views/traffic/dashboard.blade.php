@@ -2,6 +2,28 @@
 
 @section('content')
 <style>
+    .tf-page * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+    .tf-mono { font-family: 'DM Mono', monospace; }
+
+    .tf-page {
+        min-height: 100vh;
+        background: #f7f6f3;
+        background-image:
+            radial-gradient(circle at 15% 0%, rgba(217,119,6,.06) 0%, transparent 55%),
+            radial-gradient(circle at 90% 85%, rgba(217,119,6,.04) 0%, transparent 50%);
+        padding: 2.5rem 2rem;
+    }
+
+    .tf-wrap { max-width: 1400px; margin: 0 auto; }
+
+    .tf-breadcrumb {
+        display: flex; align-items: center; gap: .5rem;
+        margin-bottom: 2rem; color: #9e9b95; font-size: .8125rem;
+    }
+    .tf-breadcrumb a { color: #9e9b95; text-decoration: none; transition: color .15s; }
+    .tf-breadcrumb a:hover { color: #111; }
+    .tf-breadcrumb svg { width: 14px; height: 14px; }
+
     .traffic-row { transition: background-color .15s ease, transform .15s ease; }
     .traffic-row:hover { background-color: #fffbeb !important; transform: translateX(2px); }
     .action-btn { transition: all .2s ease; }
@@ -19,11 +41,16 @@
     @keyframes statPop { 0%{transform:scale(1);} 50%{transform:scale(1.08);} 100%{transform:scale(1);} }
 </style>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-100 px-4 py-8 md:px-8">
-    <div class="max-w-7xl mx-auto">
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-200 flex-shrink-0">
+<div class="tf-page">
+<div class="tf-wrap">
+    <nav class="tf-breadcrumb">
+        <a href="/">Home</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>Traffic Intelligence</span>
+    </nav>
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-200 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-white">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 01.553-.894L9 2m0 18l6-3m-6 3V2m6 15l6-3m-6 3V5m6 9V3m0 0l-6 3m6-3l-6 3"/>
                     </svg>
@@ -454,4 +481,6 @@
         }
     });
 </script>
+</div>
+</div>
 @endsection

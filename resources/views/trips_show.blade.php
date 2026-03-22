@@ -115,20 +115,27 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 border-t border-gray-100 mt-4">
-                        <a href="{{ route('trips.edit', $trip->id) }}"
-                           class="action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl">
-                            Edit Trip
-                        </a>
-                        <form action="{{ route('trips.destroy', $trip->id) }}" method="POST">
-                            @csrf @method('DELETE')
-                            <button type="submit" onclick="return confirm('Delete this trip?')"
-                                    class="action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
+    <a href="{{ route('trips.pdf', $trip->id) }}"
+       class="action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Export PDF
+    </a>
+    <a href="{{ route('trips.edit', $trip->id) }}"
+       class="action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl">
+        Edit Trip
+    </a>
+    <form action="{{ route('trips.destroy', $trip->id) }}" method="POST">
+        @csrf @method('DELETE')
+        <button type="submit" onclick="return confirm('Delete this trip?')"
+                class="action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl">
+            Delete
+        </button>
+    </form>
+</div>
                 </div>
 
                 {{-- ── STATUS UPDATE CARD ──────────────────────── --}}

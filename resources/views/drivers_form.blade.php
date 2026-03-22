@@ -19,14 +19,13 @@
     .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
 </style>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-100
- px-4 py-8 md:px-8">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-100 px-4 py-8 md:px-8">
     <div class="max-w-7xl mx-auto">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div class="flex items-center gap-4">
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">//www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                 </div>
@@ -41,7 +40,7 @@
             </div>
             <a href="{{ route('drivers.index') }}"
                class="action-btn inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-xl shadow-sm hover:bg-gray-50 self-start sm:self-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
                 Back to roster
@@ -50,7 +49,7 @@
 
         @if ($errors->any())
         <div class="max-w-2xl mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div>
@@ -68,10 +67,12 @@
 
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">//www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+                        <div class="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
                         <span class="text-sm font-semibold text-gray-700">Driver Details</span>
                     </div>
 
@@ -90,7 +91,7 @@
                                    value="{{ old('name', $driver->name ?? '') }}" required>
                             @error('name')
                                 <p class="mt-1 text-xs text-red-500 flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     {{ $message }}
                                 </p>
                             @enderror
@@ -148,7 +149,7 @@
                                     <option value="active"   {{ old('status', $driver->status ?? '') === 'active'   ? 'selected' : '' }}>Active</option>
                                     <option value="inactive" {{ old('status', $driver->status ?? '') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                                 </select>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                                 </svg>
                             </div>
@@ -164,7 +165,7 @@
                             </a>
                             <button type="submit"
                                     class="action-btn inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-xl shadow-md shadow-indigo-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                 </svg>
                                 {{ isset($driver) ? 'Update Driver' : 'Create Driver' }}
@@ -177,12 +178,13 @@
             <div class="space-y-4">
 
                 @if(isset($driver))
-                
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+                        <div class="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
                         <span class="text-sm font-semibold text-gray-700">Current Values</span>
                     </div>
                     <div class="divide-y divide-gray-50 px-5">
@@ -196,10 +198,7 @@
                         </div>
                         <div class="py-3">
                             <p class="text-xs text-gray-400 font-medium mb-0.5">License Expiry</p>
-                            @php
-                                $expiry = $driver->license_expiry_date;
-                                $expired = $expiry && $expiry->isPast();
-                            @endphp
+                            @php $expiry = $driver->license_expiry_date; $expired = $expiry && $expiry->isPast(); @endphp
                             <p class="text-sm font-semibold {{ $expired ? 'text-red-600' : 'text-gray-900' }}">
                                 {{ $expiry ? $expiry->format('M d, Y') : 'Not set' }}
                             </p>
@@ -208,11 +207,11 @@
                             <p class="text-xs text-gray-400 font-medium mb-0.5">Status</p>
                             @if($driver->status === 'active')
                                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded-full border border-red-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Inactive
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>Inactive
                                 </span>
                             @endif
                         </div>
@@ -220,31 +219,33 @@
                 </div>
                 @endif
 
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+                        <div class="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                             </svg>
                         </div>
                         <span class="text-sm font-semibold text-gray-700">Tips</span>
                     </div>
-                    <ul class="space-y-3">
-                        @foreach([
-                            'Use the driver\'s full legal name as registered.',
-                            'License number must match official records exactly.',
-                            'Contact should be a reachable mobile number.',
-                            'Set status to Inactive for temporarily unavailable drivers.',
-                        ] as $tip)
-                        <li class="flex items-start gap-2.5 text-xs text-gray-500">
-                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0 mt-1.5"></span>
-                            {{ $tip }}
-                        </li>
-                        @endforeach
-                    </ul>
+                    <div class="px-5 py-4">
+                        <ul class="space-y-3">
+                            @foreach([
+                                'Use the driver\'s full legal name as registered.',
+                                'License number must match official records exactly.',
+                                'Contact should be a reachable mobile number.',
+                                'Set status to Inactive for temporarily unavailable drivers.',
+                            ] as $tip)
+                            <li class="flex items-start gap-2.5 text-xs text-gray-500">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0 mt-1.5"></span>
+                                {{ $tip }}
+                            </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 </div>

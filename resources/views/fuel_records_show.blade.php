@@ -85,20 +85,27 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <a href="{{ route('fuel_records.index') }}" class="action-btn inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition-all duration-200">
-                ← Back
-            </a>
-            <a href="{{ route('fuel_records.edit', $fuel_record->id) }}" class="action-btn inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-amber-600 transition-all duration-200">
-                Edit
-            </a>
-            <form action="{{ route('fuel_records.destroy', $fuel_record->id) }}" method="POST" class="ml-auto">
-                @csrf
-                @method('DELETE')
-                <button type="submit" onclick="return confirm('Delete this record?')" class="action-btn inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-xl border border-red-200 hover:bg-red-100 transition-all duration-200">
-                    Delete
-                </button>
-            </form>
-        </div>
+    <a href="{{ route('fuel_records.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition-all duration-200">
+        ← Back
+    </a>
+    <a href="{{ route('fuel_records.pdf', $fuel_record->id) }}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-50 text-orange-700 text-sm font-semibold rounded-xl shadow-sm border border-orange-200 hover:bg-orange-100 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Export PDF
+    </a>
+    <a href="{{ route('fuel_records.edit', $fuel_record->id) }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-amber-600 transition-all duration-200">
+        Edit
+    </a>
+    <form action="{{ route('fuel_records.destroy', $fuel_record->id) }}" method="POST" class="ml-auto">
+        @csrf
+        @method('DELETE')
+        <button type="submit" onclick="return confirm('Delete this record?')" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-xl border border-red-200 hover:bg-red-100 transition-all duration-200">
+            Delete
+        </button>
+    </form>
+</div>
 
     </div>
 </div>

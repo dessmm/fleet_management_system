@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Trip;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TripController extends Controller
 {
@@ -139,4 +140,21 @@ class TripController extends Controller
         $trip->delete();
         return redirect()->route('trips.index');
     }
+
+    
+
+public function exportPdf(Trip $trip)
+{
+    $trip->load(['driver', 'vehicle']);
+
+    $trafficCount = 0;
+    $routeCount   = 0;
+    try { $trafficCount = $trip->trafficData()->whereIn('congestion_level', ['high','severe'])->count(); } catch(\Exception $e) {}
+    try { $routeCount = \App\Models\RouteRecommendation::where('trip_id', $trip->id)->where('accepted_by_driver', true)->count(); } catch(\Exception $e) {}
+
+    $pdf = Pdf::loadView('trips_pdf', compact('trip', 'trafficCount', 'routeCount'))
+              ->setPaper('a4', 'portrait');
+
+    return $pdf->download('trip-' . str_pad($trip->id, 4, '0', STR_PAD_LEFT) . '.pdf');
+}
 }

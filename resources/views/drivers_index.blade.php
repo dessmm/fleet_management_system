@@ -3,20 +3,126 @@
 @section('content')
 
 <style>
-    .driver-row { transition: background-color .15s ease, transform .15s ease; }
-    .driver-row:hover { background-color: #f0f7ff !important; transform: translateX(2px); }
-    .action-btn { transition: all .2s ease; }
-    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.14); }
-    .stat-card { transition: transform .2s ease, box-shadow .2s ease; }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,.1) !important; }
-    #search-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.2); }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+    .dr-page * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+    .dr-mono { font-family: 'DM Mono', monospace; }
+
+    .dr-page {
+        min-height: 100vh;
+        background: #f7f6f3;
+        background-image:
+            radial-gradient(circle at 15% 0%, rgba(99,102,241,.06) 0%, transparent 55%),
+            radial-gradient(circle at 90% 85%, rgba(99,102,241,.04) 0%, transparent 50%);
+        padding: 2.5rem 2rem;
+    }
+
+    .dr-wrap { max-width: 1400px; margin: 0 auto; }
+
+    .dr-breadcrumb {
+        display: flex; align-items: center; gap: .5rem;
+        margin-bottom: 2rem; color: #9e9b95; font-size: .8125rem;
+    }
+    .dr-breadcrumb a { color: #9e9b95; text-decoration: none; transition: color .15s; }
+    .dr-breadcrumb a:hover { color: #111; }
+    .dr-breadcrumb svg { width: 14px; height: 14px; }
+
+    .dr-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.75rem; gap: 1rem; flex-wrap: wrap;
+    }
+    .dr-header-left { display: flex; align-items: center; gap: 1rem; }
+    .dr-icon {
+        width: 52px; height: 52px; border-radius: 14px;
+        background: #6366f1;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; box-shadow: 0 4px 14px rgba(99,102,241,.3);
+        color: #fff; font-size: 1.35rem;
+    }
+    .dr-title { font-size: 1.5rem; font-weight: 600; color: #111; letter-spacing: -.02em; line-height: 1.2; }
+    .dr-subtitle { font-size: .8125rem; color: #9e9b95; margin-top: .2rem; }
+
+    .dr-add-btn {
+        display: inline-flex; align-items: center; gap: .5rem;
+        padding: .6rem 1.25rem; border-radius: 11px;
+        font-size: .8125rem; font-weight: 600; text-decoration: none;
+        background: #6366f1; color: #fff;
+        box-shadow: 0 4px 14px rgba(99,102,241,.3);
+        transition: all .15s; white-space: nowrap;
+    }
+    .dr-add-btn:hover { background: #4f46e5; box-shadow: 0 6px 18px rgba(99,102,241,.35); transform: translateY(-1px); }
+    .dr-add-btn svg { width: 15px; height: 15px; }
+
+    .dr-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 640px) { .dr-stats { grid-template-columns: repeat(2, 1fr); } }
+
+    .dr-stat {
+        background: #fff; border: 1px solid #e8e6e1;
+        border-radius: 16px; padding: 1.1rem 1.25rem;
+        display: flex; align-items: center; gap: .875rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        transition: box-shadow .2s, transform .2s;
+    }
+    .dr-stat:hover { box-shadow: 0 6px 20px rgba(0,0,0,.08); transform: translateY(-2px); }
+    .dr-stat-icon {
+        width: 40px; height: 40px; border-radius: 11px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .dr-stat-icon svg { width: 18px; height: 18px; }
+    .dr-stat-num { font-size: 1.4rem; font-weight: 700; color: #111; letter-spacing: -.03em; line-height: 1; }
+    .dr-stat-lbl { font-size: .75rem; color: #9e9b95; font-weight: 500; margin-top: .2rem; }
+
+    .dr-card { background: #fff; border: 1px solid #e8e6e1; border-radius: 18px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04); }
+    .dr-card-header { padding: .875rem 1.5rem; border-bottom: 1px solid #f0ede8; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .dr-card-title { font-size: .8125rem; font-weight: 600; color: #333; }
+    .dr-count { display: inline-flex; align-items: center; background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; font-size: .7rem; font-weight: 700; padding: .15rem .55rem; border-radius: 99px; font-family: 'DM Mono', monospace; }
+
+    .dr-search-wrap { margin-left: auto; position: relative; }
+    .dr-search-wrap svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #b0ada7; pointer-events: none; }
+    .dr-search { padding: .5rem .875rem .5rem 2.25rem; font-size: .8125rem; background: #fafaf8; border: 1px solid #e8e6e1; border-radius: 9px; color: #333; width: 220px; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+    .dr-search::placeholder { color: #c0bdb8; }
+    .dr-search:focus { outline: none; background: #fff; border-color: #c7d2fe; box-shadow: 0 0 0 3px rgba(199,210,254,.2); width: 260px; }
+
+    .dr-table { width: 100%; border-collapse: collapse; }
+    .dr-table thead tr { background: #fafaf8; border-bottom: 1px solid #f0ede8; }
+    .dr-table th { padding: .75rem 1.25rem; text-align: left; font-size: .7rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b0ada7; white-space: nowrap; }
+    .dr-table th:last-child { text-align: right; }
+    .dr-table tbody tr { border-bottom: 1px solid #f7f6f3; transition: background .12s; }
+    .dr-table tbody tr:last-child { border-bottom: none; }
+    .dr-table tbody tr:hover { background: #eff2ff; }
+    .dr-table td { padding: .875rem 1.25rem; vertical-align: middle; }
+
+    .dr-actions { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
+    .dr-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .8rem; border-radius: 8px; font-size: .75rem; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+    .dr-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .dr-btn-view { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .dr-btn-view:hover { background: #dbeafe; }
+    .dr-btn-edit { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .dr-btn-edit:hover { background: #fef3c7; }
+    .dr-btn-del { background: #fff5f5; border-color: #fecaca; color: #dc2626; }
+    .dr-btn-del:hover { background: #fee2e2; }
+
+    .dr-footer { padding: .75rem 1.5rem; border-top: 1px solid #f0ede8; background: #fafaf8; display: flex; align-items: center; justify-content: space-between; }
+    .dr-footer-text { font-size: .72rem; color: #b0ada7; }
+
+    .dr-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 2rem; text-align: center; }
+    .dr-empty-icon { width: 72px; height: 72px; border-radius: 20px; background: #eef2ff; border: 1px solid #c7d2fe; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+    .dr-empty-title { font-size: 1rem; font-weight: 600; color: #333; margin-bottom: .4rem; }
+    .dr-empty-sub { font-size: .8375rem; color: #9e9b95; max-width: 280px; line-height: 1.5; margin-bottom: 1.5rem; }
+
     @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.4;} }
     .pulse { animation: pulse-dot 2s ease-in-out infinite; }
 </style>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 px-4 py-8 md:px-8">
+<div class="dr-page">
+<div class="dr-wrap">
 
     {{-- ── PAGE HEADER ─────────────────────────────────────────── --}}
+    <nav class="dr-breadcrumb">
+        <a href="/">Home</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>Drivers</span>
+    </nav>
     <div class="max-w-7xl mx-auto mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -115,13 +221,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
                     </svg>
                     <input id="search-input" type="text" placeholder="Search drivers…"
-                           class="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:bg-white transition-all duration-200">
+                           class="dr-search w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:bg-white transition-all duration-200">
                 </div>
             </div>
 
             @if(count($drivers) > 0)
                 <div class="overflow-x-auto">
-                    <table class="w-full" id="drivers-table">
+                    <table class="dr-table" id="drivers-table">
                         <thead>
                             <tr class="bg-gray-50 border-b border-gray-100">
                                 <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Driver</th>

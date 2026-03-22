@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FuelRecord;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FuelRecordController extends Controller
 {
@@ -71,4 +72,15 @@ class FuelRecordController extends Controller
         $fuel_record->delete();
         return redirect()->route('fuel_records.index');
     }
+    
+    public function exportPdf(FuelRecord $fuel_record) {
+    $fuel_record->load('vehicle');
+
+    $pdf = Pdf::loadView('fuel_pdf', compact('fuel_record'))
+              ->setPaper('a4', 'portrait');
+
+    return $pdf->download('fuel-' . str_pad($fuel_record->id, 4, '0', STR_PAD_LEFT) . '.pdf');
+
+    }
+
 }
