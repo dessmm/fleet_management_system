@@ -1,7 +1,7 @@
 {
   "functions": {
     "public/index.php": {
-      "runtime": "@vercel/php"
+      "runtime": "@vercel/php@1.0.0"
     }
   },
   "routes": [
