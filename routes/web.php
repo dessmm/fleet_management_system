@@ -9,6 +9,8 @@ use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\FuelRecordController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\TrafficController;
+use App\Http\Controllers\FleetMindController;
+use App\Http\Controllers\ChatController;
 
 Route::get('/', [HomeController::class, 'index']);
 
@@ -23,6 +25,10 @@ Route::patch('/maintenance_records/{maintenance_record}/complete', [MaintenanceR
 Route::resource('fuel_records', FuelRecordController::class);
 Route::get('/fuel_records/{fuel_record}/pdf', [FuelRecordController::class, 'exportPdf'])->name('fuel_records.pdf');
 Route::resource('assignments', AssignmentController::class);
+Route::post('/chat', [ChatController::class, 'chat'])->name('chat');
+
+Route::get('/fleetmind', [FleetMindController::class, 'index'])->name('fleetmind.index');
+Route::post('/fleetmind', [FleetMindController::class, 'ask'])->name('fleetmind.ask');
 
 Route::prefix('traffic')->name('traffic.')->group(function () {
     Route::get('dashboard', [TrafficController::class, 'dashboard'])->name('dashboard');

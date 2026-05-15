@@ -6,14 +6,14 @@ use App\Models\Trip;
 use App\Models\TrafficData;
 use App\Models\RouteAnalysis;
 use App\Models\RouteRecommendation;
+use App\Services\GeminiService;
 use App\Services\TrafficAnalysisService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class TrafficController extends Controller
 {
-    protected $trafficService;
+    protected TrafficAnalysisService $trafficService;
 
     public function __construct(TrafficAnalysisService $trafficService)
     {
@@ -89,7 +89,7 @@ class TrafficController extends Controller
         return response()->json(['success' => true, 'message' => 'Recommendation status updated', 'data' => $recommendation]);
     }
 
-    public function getVehicleTrafficHistory($vehicleId)
+    public function getVehicleTrafficHistory(int $vehicleId)
     {
         $trafficData = TrafficData::where('vehicle_id', $vehicleId)
             ->where('timestamp', '>=', now()->subDays(7))
@@ -117,7 +117,7 @@ class TrafficController extends Controller
         return view('traffic.hotspots', compact('hotspots'));
     }
 
-    public function getHotspotData($latitude, $longitude)
+    public function getHotspotData(float $latitude, float $longitude)
     {
         $hotspotData = TrafficData::where('congestion_level', '!=', 'low')
             ->where('timestamp', '>=', now()->subHours(2))
@@ -274,82 +274,202 @@ class TrafficController extends Controller
             $hotspotSummary = $hotspots->isEmpty()
                 ? 'No major congestion hotspots detected currently.'
                 : $hotspots->map(fn($h) =>
-                    "- Location ({$h->latitude}, {$h->longitude}): {$h->incident_count} incidents, avg speed {$h->avg_speed} km/h, level: {$h->congestion_level}"
+                    "- Location ({$h->latitude}, {$h->longitude}): {$h->incident_count} incidents, avg speed " . number_format($h->avg_speed, 1) . " km/h, level: {$h->congestion_level}"
                   )->implode("\n");
 
             $currentStatus = $latestTraffic
                 ? "Current speed: {$latestTraffic->speed} km/h, Congestion: {$latestTraffic->congestion_level}"
                 : "No live GPS data available for this trip.";
 
-            $prompt = "You are a fleet traffic analyst. A vehicle is on a trip and you must suggest an alternative route to avoid congestion.\n\n"
-                . "TRIP DETAILS:\n"
-                . "- From: " . $trip->start_location . "\n"
-                . "- To: " . $trip->end_location . "\n"
-                . "- Distance: " . $trip->distance . " km\n"
-                . "- Status: " . $trip->status . "\n"
-                . "- " . $currentStatus . "\n\n"
+            $vehicle = $trip->vehicle;
+            $vehicleInfo = $vehicle
+                ? "{$vehicle->plate_number} ({$vehicle->make} {$vehicle->model}, {$vehicle->type})"
+                : "Fleet vehicle";
+
+            // ── System prompt ─────────────────────────────────────────────
+            $systemPrompt = "You are a fleet route optimization assistant. "
+                . "You MUST respond with ONLY a valid JSON object — no markdown, no code blocks, no backticks, no explanation text. "
+                . "Your entire response must be parseable by json_decode(). "
+                . "Do NOT wrap the JSON in ```json or ``` tags. "
+                . "Return ONLY the JSON object, nothing else.";
+
+            // ── User prompt with exact required field names ────────────────
+            $userPrompt = "Suggest an optimized route for this trip:\n"
+                . "- From: {$trip->start_location}\n"
+                . "- To: {$trip->end_location}\n"
+                . "- Vehicle: {$vehicleInfo}\n"
+                . "- Vehicle status: {$currentStatus}\n\n"
                 . "CURRENT CONGESTION HOTSPOTS (last 2 hours):\n"
                 . $hotspotSummary . "\n\n"
-                . "Based on this data, respond ONLY with a valid JSON object (no markdown, no explanation outside the JSON) with exactly these fields:\n"
+                . "You MUST respond with ONLY this exact JSON structure, no extra fields, no markdown:\n"
                 . "{\n"
-                . '  "alternative_route": "Clear description of the suggested alternative route",' . "\n"
-                . '  "reason": "Brief explanation of why this route avoids congestion (2-3 sentences)",' . "\n"
-                . '  "time_saved": "Estimated time saved (e.g. ~15 mins)",' . "\n"
-                . '  "confidence": "Confidence percentage (e.g. 82%)",' . "\n"
-                . '  "hotspots_avoided": ["description of hotspot avoided"]' . "\n"
+                . '    "suggested_route": "full step-by-step route description under 200 chars",' . "\n"
+                . '    "estimated_time_saved": 15,' . "\n"
+                . '    "confidence": 87,' . "\n"
+                . '    "reason": "one to two sentences explaining the route choice",' . "\n"
+                . '    "estimated_distance": "X.X km",' . "\n"
+                . '    "estimated_duration": "X hours Y minutes",' . "\n"
+                . '    "fuel_estimate": "approximately X liters",' . "\n"
+                . '    "hotspots_avoided": ["hotspot description"]' . "\n"
                 . "}\n\n"
-                . "If there are no hotspots, still suggest the most efficient route and set hotspots_avoided to an empty array.";
+                . "Rules:\n"
+                . "- suggested_route: descriptive string with actual street directions\n"
+                . "- estimated_time_saved: integer in MINUTES only, no text, no ~ symbol\n"
+                . "- confidence: integer between 70 and 99, no % symbol\n"
+                . "- reason: one to two sentences max\n"
+                . "- hotspots_avoided: empty array [] if no hotspots exist\n"
+                . "- All strings under 200 characters";
 
-            $response = Http::withOptions(['verify' => false])
-                ->withHeaders([
-                    'x-api-key'         => config('services.anthropic.key'),
-                    'anthropic-version' => '2023-06-01',
-                    'content-type'      => 'application/json',
-                ])
-                ->post('https://api.anthropic.com/v1/messages', [
-                    'model'      => 'claude-sonnet-4-5',
-                    'max_tokens' => 800,
-                    'messages'   => [
-                        ['role' => 'user', 'content' => $prompt],
-                    ],
+            // ── Call Gemini ───────────────────────────────────────────────
+            $gemini   = new GeminiService();
+            $contents = $gemini->buildSingleTurn($userPrompt);
+            $aiText   = $gemini->generate($systemPrompt, $contents, 2048, 0.4);
+
+            if ($aiText === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gemini AI service unavailable. Please try again.',
+                ], 500);
+            }
+
+            // ── Parse JSON with retry ─────────────────────────────────────
+            $parsed = $this->parseRouteResponse($aiText);
+
+            if (!$parsed) {
+                $simplePrompt  = "Route from {$trip->start_location} to {$trip->end_location}. "
+                    . "Reply ONLY with valid JSON: "
+                    . '{"suggested_route":"Take main highway route","estimated_time_saved":10,"confidence":80,"reason":"Direct route with minimal traffic.","estimated_distance":"N/A","estimated_duration":"N/A","fuel_estimate":"N/A","hotspots_avoided":[]}';
+                $retryContents = [['role' => 'user', 'parts' => [['text' => $simplePrompt]]]];
+                $retryText     = $gemini->generate($systemPrompt, $retryContents, 512, 0.3);
+                $parsed        = $retryText ? $this->parseRouteResponse($retryText) : null;
+            }
+
+            if (!$parsed) {
+                Log::error('Gemini route suggestion: both parse attempts failed', [
+                    'trip_id'     => $trip->id,
+                    'raw_preview' => substr($aiText ?? '', 0, 300),
                 ]);
-
-            if (!$response->successful()) {
-                Log::error('Anthropic API error', ['status' => $response->status(), 'body' => $response->body()]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'API Error ' . $response->status() . ': ' . $response->body(),
-                ], 500);
+                    'message' => 'Could not generate route suggestion. Please try again.',
+                ], 422);
             }
 
-            $content = $response->json('content.0.text', '');
-            $content = preg_replace('/```json|```/i', '', $content);
-            $content = trim($content);
-            $result = json_decode($content, true);
+            // ── Normalise ALL possible field name variants ────────────────
+            // This ensures the frontend always receives a stable field contract
+            // regardless of what exact names Gemini chose to use.
+            $suggestedRoute = $parsed['suggested_route']
+                ?? $parsed['recommended_route']
+                ?? $parsed['alternative_route']
+                ?? $parsed['route_description']
+                ?? $parsed['main_route']
+                ?? $parsed['route']
+                ?? 'Route optimized for current conditions.';
 
-            if (!$result || !isset($result['alternative_route'])) {
-                Log::error('Anthropic parse error', ['content' => $content]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Could not parse AI response: ' . $content,
-                ], 500);
+            $timeSaved = (int) ($parsed['estimated_time_saved']
+                ?? $parsed['time_saved']
+                ?? $parsed['time']
+                ?? 0);
+            // Handle string values like "15 minutes" or "~15 mins"
+            if ($timeSaved === 0 && isset($parsed['estimated_time_saved'])) {
+                preg_match('/\d+/', (string) $parsed['estimated_time_saved'], $m);
+                $timeSaved = isset($m[0]) ? (int) $m[0] : 0;
             }
+
+            $confidence = (int) ($parsed['confidence'] ?? 85);
+            // Strip % symbol if Gemini included it
+            if ($confidence === 0 && isset($parsed['confidence'])) {
+                preg_match('/\d+/', (string) $parsed['confidence'], $m);
+                $confidence = isset($m[0]) ? (int) $m[0] : 85;
+            }
+            $confidence = max(70, min(99, $confidence));
+
+            $reason = $parsed['reason']
+                ?? $parsed['why']
+                ?? $parsed['explanation']
+                ?? 'Route optimized for current traffic conditions and efficiency.';
 
             return response()->json([
-                'success'           => true,
-                'alternative_route' => $result['alternative_route'],
-                'reason'            => $result['reason'],
-                'time_saved'        => $result['time_saved'],
-                'confidence'        => $result['confidence'],
-                'hotspots_avoided'  => $result['hotspots_avoided'] ?? [],
+                'success'               => true,
+                // Primary display fields (stable names the frontend uses)
+                'suggested_route'       => $suggestedRoute,
+                'estimated_time_saved'  => $timeSaved,
+                'confidence'            => $confidence,
+                'reason'                => $reason,
+                // Extra detail fields
+                'estimated_distance'    => $parsed['estimated_distance'] ?? 'N/A',
+                'estimated_duration'    => $parsed['estimated_duration'] ?? 'N/A',
+                'fuel_estimate'         => $parsed['fuel_estimate']      ?? 'N/A',
+                'hotspots_avoided'      => $parsed['hotspots_avoided']   ?? [],
+                // Route coordinates for map rendering (start/end names)
+                'from'                  => $trip->start_location,
+                'to'                    => $trip->end_location,
             ]);
 
         } catch (\Exception $e) {
             Log::error('suggestRoute exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred. Please try again.',
             ], 500);
         }
+    }
+
+    /**
+     * Robustly parse a JSON string from Gemini.
+     * Handles markdown fences, surrounding text, and truncated responses.
+     */
+    private function parseRouteResponse(string $raw): ?array
+    {
+        // 1. Strip markdown code fences
+        $cleaned = preg_replace('/```json\s*/i', '', $raw);
+        $cleaned = preg_replace('/```\s*/i',     '', $cleaned);
+        $cleaned = trim($cleaned);
+
+        // 2. Extract the first JSON object if there is surrounding text
+        if (preg_match('/\{.*\}/s', $cleaned, $matches)) {
+            $cleaned = $matches[0];
+        }
+
+        // 3. Fast path: direct decode
+        $decoded = json_decode($cleaned, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+
+        // 4. Repair truncated JSON and retry
+        $repaired = $this->fixTruncatedJson($cleaned);
+        $decoded  = json_decode($repaired, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error('Route suggestion JSON parse failed', [
+                'error'       => json_last_error_msg(),
+                'raw_preview' => substr($raw, 0, 500),
+            ]);
+            return null;
+        }
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * Close unclosed braces/brackets in a truncated JSON string.
+     */
+    private function fixTruncatedJson(string $json): string
+    {
+        $openBraces   = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+
+        // If the string appears to end mid-value, close the string
+        $lastChar = substr(rtrim($json), -1);
+        if ($lastChar !== '"' && $lastChar !== '}' && $lastChar !== ']' && $lastChar !== ',') {
+            $json .= '"';
+        }
+
+        // Close open arrays first, then objects
+        $json .= str_repeat(']', max(0, $openBrackets));
+        $json .= str_repeat('}', max(0, $openBraces));
+
+        return $json;
     }
 }

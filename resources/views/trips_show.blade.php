@@ -916,11 +916,18 @@ await drawRoute(startCoords, endCoords);
 });
 </script>
 
+<style>
+    html.dark .route-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-left-color: #a855f7;
+    }
+</style>
 {{-- AI Route Suggestion Modal --}}
 <div id="route-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
-     style="background:rgba(0,0,0,.5); backdrop-filter:blur(4px);">
-    <div id="route-modal-box" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-violet-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+     style="background:rgba(0,0,0,.55); backdrop-filter:blur(4px);">
+    <div id="route-modal-box" class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transition-colors">
+        {{-- Header --}}
+        <div class="bg-gradient-to-r from-violet-600 to-purple-700 dark:from-violet-700 dark:to-purple-900 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-white">
@@ -935,79 +942,126 @@ await drawRoute(startCoords, endCoords);
             <button onclick="closeRouteModal()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
         </div>
 
+        {{-- Loading state --}}
         <div id="modal-loading" class="px-6 py-10 text-center">
             <div class="flex items-center justify-center gap-1 mb-4">
                 <span class="typing-dot w-2.5 h-2.5 bg-purple-500 rounded-full inline-block"></span>
                 <span class="typing-dot w-2.5 h-2.5 bg-purple-500 rounded-full inline-block"></span>
                 <span class="typing-dot w-2.5 h-2.5 bg-purple-500 rounded-full inline-block"></span>
             </div>
-            <p class="text-gray-600 font-medium text-sm">Analyzing traffic hotspots...</p>
-            <p class="text-gray-400 text-xs mt-1">Finding the best alternative route for you</p>
+            <p class="text-gray-600 dark:text-gray-300 font-medium text-sm">Analyzing traffic hotspots...</p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Finding the best alternative route for you</p>
         </div>
 
-        <div id="modal-result" class="hidden px-6 py-5 space-y-4">
-            <div class="route-card rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-purple-600">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                    </svg>
-                    <span class="text-xs font-bold text-purple-700 uppercase tracking-wider">Suggested Route</span>
+        {{-- Result panel --}}
+        <div id="modal-result" class="hidden">
+            {{-- Inline map --}}
+            <div id="modal-route-map" class="w-full bg-gray-100 dark:bg-slate-700" style="height:220px;"></div>
+
+            <div class="px-6 py-4 space-y-4">
+                {{-- Suggested Route box --}}
+                <div class="route-card rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-purple-600 dark:text-purple-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                        </svg>
+                        <span class="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Suggested Route</span>
+                    </div>
+                    <p id="result-route" class="text-gray-900 dark:text-white font-semibold text-sm leading-relaxed"></p>
                 </div>
-                <p id="result-route" class="text-gray-900 font-semibold text-sm leading-relaxed"></p>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
-                    <p class="text-xs text-gray-500 mb-1">Est. Time Saved</p>
-                    <p id="result-time-saved" class="text-xl font-bold text-emerald-600"></p>
+
+                {{-- Stats grid: Time Saved + Confidence --}}
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl p-3 text-center">
+                        <p class="text-xs text-gray-500 dark:text-emerald-100/70 mb-1">Est. Time Saved</p>
+                        <p id="result-time-saved" class="text-xl font-bold text-emerald-600 dark:text-emerald-400"></p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-3 text-center">
+                        <p class="text-xs text-gray-500 dark:text-blue-100/70 mb-1">Confidence</p>
+                        <p id="result-confidence" class="text-xl font-bold text-blue-600 dark:text-blue-400"></p>
+                    </div>
                 </div>
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
-                    <p class="text-xs text-gray-500 mb-1">Confidence</p>
-                    <p id="result-confidence" class="text-xl font-bold text-blue-600"></p>
+
+                {{-- Extra detail pills: Distance · Duration · Fuel --}}
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600 rounded-xl p-3 text-center">
+                        <p class="text-xs text-gray-400 dark:text-gray-400 mb-1">Distance</p>
+                        <p id="result-distance" class="text-sm font-semibold text-gray-700 dark:text-gray-200"></p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600 rounded-xl p-3 text-center">
+                        <p class="text-xs text-gray-400 dark:text-gray-400 mb-1">Duration</p>
+                        <p id="result-duration" class="text-sm font-semibold text-gray-700 dark:text-gray-200"></p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600 rounded-xl p-3 text-center">
+                        <p class="text-xs text-gray-400 dark:text-gray-400 mb-1">Fuel Est.</p>
+                        <p id="result-fuel" class="text-sm font-semibold text-gray-700 dark:text-gray-200"></p>
+                    </div>
                 </div>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Why this route?</p>
-                <p id="result-reason" class="text-sm text-gray-700 leading-relaxed"></p>
-            </div>
-            <div id="hotspots-section" class="hidden">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hotspots Avoided</p>
-                <div id="result-hotspots" class="space-y-1.5"></div>
-            </div>
-            <div class="flex gap-2 pt-1">
-                <button onclick="getRouteSuggestion()" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors">Regenerate</button>
-                <button onclick="closeRouteModal()" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">Close</button>
+
+                {{-- Why this route --}}
+                <div class="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-4 border border-gray-100 dark:border-slate-600">
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Why this route?</p>
+                    <p id="result-reason" class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"></p>
+                </div>
+
+                {{-- Hotspots avoided --}}
+                <div id="hotspots-section" class="hidden">
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Hotspots Avoided</p>
+                    <div id="result-hotspots" class="space-y-1.5"></div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="flex gap-2 pt-1">
+                    <button onclick="getRouteSuggestion()" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 rounded-xl transition-colors">Regenerate</button>
+                    <button onclick="closeRouteModal()" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-colors">Close</button>
+                </div>
             </div>
         </div>
 
+        {{-- Error panel --}}
         <div id="modal-error" class="hidden px-6 py-8 text-center">
-            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500 dark:text-red-400">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                 </svg>
             </div>
-            <p class="text-gray-800 font-semibold text-sm mb-1">Could not get suggestion</p>
-            <p id="modal-error-msg" class="text-gray-500 text-xs mb-4"></p>
-            <button onclick="getRouteSuggestion()" class="px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100">Try Again</button>
+            <p class="text-gray-800 dark:text-white font-semibold text-sm mb-1">Could not get suggestion</p>
+            <p id="modal-error-msg" class="text-gray-500 dark:text-gray-400 text-xs mb-4"></p>
+            <button onclick="getRouteSuggestion()" class="px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50">Try Again</button>
         </div>
     </div>
 </div>
 
 <script>
     const SUGGEST_URL = '{{ route("traffic.suggest-route", $trip->id) }}';
+    let routeMapInstance = null;
 
     function getRouteSuggestion() {
         document.getElementById('route-modal').classList.remove('hidden');
-        showLoading();
+        showRouteLoading();
         fetch(SUGGEST_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
         })
         .then(r => r.json())
-        .then(data => { data.success ? showResult(data) : showError(data.message || 'Something went wrong.'); })
+        .then(data => {
+            if (data.success) {
+                showResult(data);
+            } else {
+                showError(data.message || 'Something went wrong.');
+            }
+        })
         .catch(() => showError('Network error. Please try again.'));
     }
 
-    function showLoading() {
+    function parseTimeSaved(value) {
+        if (!value && value !== 0) return 0;
+        if (typeof value === 'number') return value;
+        const match = String(value).match(/\d+/);
+        return match ? parseInt(match[0]) : 0;
+    }
+
+    function showRouteLoading() {
         document.getElementById('modal-loading').classList.remove('hidden');
         document.getElementById('modal-result').classList.add('hidden');
         document.getElementById('modal-error').classList.add('hidden');
@@ -1017,13 +1071,43 @@ await drawRoute(startCoords, endCoords);
         document.getElementById('modal-loading').classList.add('hidden');
         document.getElementById('modal-error').classList.add('hidden');
         document.getElementById('modal-result').classList.remove('hidden');
-        document.getElementById('result-route').textContent      = data.alternative_route;
-        document.getElementById('result-time-saved').textContent = data.time_saved;
-        document.getElementById('result-confidence').textContent = data.confidence;
-        document.getElementById('result-reason').textContent     = data.reason;
-        if (data.hotspots_avoided?.length > 0) {
+
+        // ── Suggested Route (with all fallback field names) ──────────
+        const routeText = data.suggested_route
+            ?? data.recommended_route
+            ?? data.alternative_route
+            ?? data.route_description
+            ?? data.route
+            ?? null;
+        document.getElementById('result-route').textContent =
+            routeText || 'Route optimized for current conditions.';
+
+        // ── Est. Time Saved ──────────────────────────────────────────
+        const mins = parseTimeSaved(data.estimated_time_saved ?? data.time_saved ?? 0);
+        document.getElementById('result-time-saved').textContent =
+            mins > 0 ? `~${mins} mins` : '~0 mins';
+
+        // ── Confidence ───────────────────────────────────────────────
+        const pct = parseInt(data.confidence) || 85;
+        document.getElementById('result-confidence').textContent = `${pct}%`;
+
+        // ── Why this route ───────────────────────────────────────────
+        const reason = data.reason ?? data.why ?? data.explanation ?? 'Optimized for efficiency.';
+        document.getElementById('result-reason').textContent = reason;
+
+        // ── Extra detail pills ───────────────────────────────────────
+        const distEl = document.getElementById('result-distance');
+        const durEl  = document.getElementById('result-duration');
+        const fuelEl = document.getElementById('result-fuel');
+        if (distEl) distEl.textContent = data.estimated_distance || 'N/A';
+        if (durEl)  durEl.textContent  = data.estimated_duration  || 'N/A';
+        if (fuelEl) fuelEl.textContent = data.fuel_estimate        || 'N/A';
+
+        // ── Hotspots avoided ─────────────────────────────────────────
+        const hotspots = data.hotspots_avoided ?? [];
+        if (hotspots.length > 0) {
             document.getElementById('hotspots-section').classList.remove('hidden');
-            document.getElementById('result-hotspots').innerHTML = data.hotspots_avoided.map(h =>
+            document.getElementById('result-hotspots').innerHTML = hotspots.map(h =>
                 `<div class="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
                     <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
                     <span class="text-xs text-red-700 font-medium">${h}</span>
@@ -1031,6 +1115,11 @@ await drawRoute(startCoords, endCoords);
         } else {
             document.getElementById('hotspots-section').classList.add('hidden');
         }
+
+        // ── Modal route map ──────────────────────────────────────────
+        const from = data.from || @json($trip->start_location);
+        const to   = data.to   || @json($trip->end_location);
+        initModalMap(from, to);
     }
 
     function showError(msg) {
@@ -1040,8 +1129,82 @@ await drawRoute(startCoords, endCoords);
         document.getElementById('modal-error-msg').textContent = msg;
     }
 
-    function closeRouteModal() { document.getElementById('route-modal').classList.add('hidden'); }
-    document.getElementById('route-modal').addEventListener('click', e => { if (e.target === document.getElementById('route-modal')) closeRouteModal(); });
+    // ── Modal Leaflet map ──────────────────────────────────────────────
+    async function geocode(name) {
+        try {
+            const r = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`,
+                { headers: { 'Accept-Language': 'en' } }
+            );
+            const d = await r.json();
+            if (d.length > 0) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+        } catch(e) {}
+        return null;
+    }
+
+    async function initModalMap(fromName, toName) {
+        const mapEl = document.getElementById('modal-route-map');
+        if (!mapEl) return;
+
+        // Destroy existing map instance if re-opening
+        if (routeMapInstance) {
+            routeMapInstance.remove();
+            routeMapInstance = null;
+        }
+        mapEl.style.height = '220px';
+
+        const [startC, endC] = await Promise.all([geocode(fromName), geocode(toName)]);
+        if (!startC || !endC) {
+            mapEl.innerHTML = '<p class="text-xs text-gray-400 text-center pt-8">Map unavailable for these locations.</p>';
+            return;
+        }
+
+        routeMapInstance = L.map(mapEl, { zoomControl: false, scrollWheelZoom: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap', maxZoom: 18
+        }).addTo(routeMapInstance);
+
+        function pin(color, letter) {
+            return L.divIcon({
+                className: '',
+                html: `<div style="width:28px;height:28px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;">
+                    <span style="transform:rotate(45deg);color:#fff;font-weight:800;font-size:11px;">${letter}</span></div>`,
+                iconSize: [28,28], iconAnchor: [14,28], popupAnchor: [0,-28]
+            });
+        }
+
+        L.marker([startC.lat, startC.lng], { icon: pin('#16a34a','A') })
+            .addTo(routeMapInstance).bindPopup(`<b>Start:</b> ${fromName}`);
+        L.marker([endC.lat, endC.lng], { icon: pin('#dc2626','B') })
+            .addTo(routeMapInstance).bindPopup(`<b>End:</b> ${toName}`);
+
+        // Draw OSRM road-following route
+        try {
+            const osrm = await fetch(
+                `https://router.project-osrm.org/route/v1/driving/${startC.lng},${startC.lat};${endC.lng},${endC.lat}?overview=full&geometries=geojson`
+            );
+            const od = await osrm.json();
+            if (od.code === 'Ok' && od.routes.length > 0) {
+                const coords = od.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                L.polyline(coords, { color: '#7c3aed', weight: 4, opacity: 0.85 }).addTo(routeMapInstance);
+                L.polyline(coords, { color: '#4c1d95', weight: 7, opacity: 0.15 }).addTo(routeMapInstance);
+            } else {
+                L.polyline([[startC.lat,startC.lng],[endC.lat,endC.lng]], { color:'#7c3aed',weight:3,dashArray:'6 4' }).addTo(routeMapInstance);
+            }
+        } catch(e) {
+            L.polyline([[startC.lat,startC.lng],[endC.lat,endC.lng]], { color:'#7c3aed',weight:3,dashArray:'6 4' }).addTo(routeMapInstance);
+        }
+
+        routeMapInstance.fitBounds([[startC.lat,startC.lng],[endC.lat,endC.lng]], { padding: [24,24] });
+    }
+
+    function closeRouteModal() {
+        document.getElementById('route-modal').classList.add('hidden');
+        if (routeMapInstance) { routeMapInstance.remove(); routeMapInstance = null; }
+    }
+    document.getElementById('route-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('route-modal')) closeRouteModal();
+    });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRouteModal(); });
 </script>
 @endsection

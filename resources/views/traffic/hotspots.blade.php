@@ -9,8 +9,15 @@
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     #suggest-modal * { font-family: 'DM Sans', sans-serif; }
 
+    /* ── Fix Leaflet z-index conflict with modals ── */
+    .leaflet-pane         { z-index: 4 !important; }
+    .leaflet-top,
+    .leaflet-bottom       { z-index: 5 !important; }
+    .leaflet-popup-pane   { z-index: 6 !important; }
+    .leaflet-control      { z-index: 7 !important; }
+
     .sr-modal-bg {
-        position: fixed; inset: 0; z-index: 9999;
+        position: fixed; inset: 0; z-index: 99998;
         display: none; align-items: center; justify-content: center;
         padding: 1rem; background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
     }
@@ -118,8 +125,6 @@
     .sr-btn-primary:hover { background: #b45309; }
     .sr-btn-secondary { background: #f5f4f1; color: #444; }
     .sr-btn-secondary:hover { background: #eae8e3; }
-    #jsonModal:not(.hidden) { animation: fadeIn .2s ease-in; }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     .leaflet-popup-content-wrapper { border-radius: 12px !important; }
     .leaflet-popup-content { margin: 12px 14px !important; }
 </style>
@@ -336,9 +341,11 @@
         </div>
     </div>
 
-    {{-- JSON Detail Modal --}}
-    <div id="jsonModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl max-h-[90vh] overflow-auto w-full">
+    {{-- JSON Detail Modal — fixed z-index above Leaflet --}}
+    <div id="jsonModal" class="hidden fixed inset-0 flex items-center justify-center p-4"
+         style="z-index: 99999; background: rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl max-h-[90vh] overflow-auto w-full"
+             style="z-index: 100000; position: relative;">
             <div class="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900">Hotspot Details</h3>
@@ -395,7 +402,6 @@
 <script>
 const hotspotsData = @json($hotspotsJson);
 
-// ── Route suggestion text pool ────────────────────────────────────────────
 const ROUTE_ALTERNATIVES = {
     severe: [
         { route: 'Take the C-5 Road via Libis flyover, then connect to EDSA Southbound avoiding the congestion core. Estimated detour adds 4.2 km but bypasses the incident zone.', reason: 'The primary route is experiencing severe gridlock with near-zero movement. The C-5 alternative maintains average speeds of 45–60 km/h and has been validated by recent fleet GPS data showing 73% faster transit times.', timeSaved: '~22 mins', confidence: '87%', hotspots: ['EDSA–Ortigas intersection (8.3 km/h avg)', 'Shaw Boulevard merge point (4.1 km/h avg)', 'Primary incident cluster (0–5 km/h)'] },
@@ -420,7 +426,6 @@ const NEAR_CITIES = {
     '10.2769_123.6381': { from: 'Cebu City',      to: 'Toledo City',   alt: 'Transcentral Highway (Mountain Route) via Busay Ridge' },
 };
 
-// ── OSRM routing destinations ─────────────────────────────────────────────
 const ROUTE_DESTINATIONS = {
     '10.3157_123.8854': { toLat: 10.3236, toLng: 123.9223 },
     '14.5995_120.9842': { toLat: 14.6760, toLng: 121.0437 },
@@ -433,7 +438,6 @@ const ROUTE_DESTINATIONS = {
 let currentHotspotLat, currentHotspotLng;
 let miniMap = null, miniMapLayers = [];
 
-// ── Decode OSRM polyline ──────────────────────────────────────────────────
 function decodePolyline(encoded) {
     const pts = [];
     let index = 0, lat = 0, lng = 0;
@@ -449,7 +453,6 @@ function decodePolyline(encoded) {
     return pts;
 }
 
-// ── OSRM fetch helpers ────────────────────────────────────────────────────
 async function fetchOsrmRoute(fromLat, fromLng, toLat, toLng) {
     const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=polyline`;
     const res = await fetch(url);
@@ -474,15 +477,11 @@ async function fetchDetourRoute(hotLat, hotLng, toLat, toLng) {
     return decodePolyline(data.routes[0].geometry);
 }
 
-// ── Draw real road routes on mini-map ─────────────────────────────────────
 async function drawRouteOnMiniMap(lat, lng, level) {
     miniMapLayers.forEach(l => { try { miniMap.removeLayer(l); } catch(e){} });
     miniMapLayers = [];
-
     const key = `${lat}_${lng}`;
     const dest = ROUTE_DESTINATIONS[key] || { toLat: lat + 0.04, toLng: lng + 0.04 };
-
-    // Loading label
     const loadingMarker = L.marker([lat, lng], {
         icon: L.divIcon({
             html: `<div style="background:#fff;border:1px solid #e8e6e1;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;color:#555;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.1)">Loading route…</div>`,
@@ -490,59 +489,32 @@ async function drawRouteOnMiniMap(lat, lng, level) {
         }), interactive: false,
     }).addTo(miniMap);
     miniMapLayers.push(loadingMarker);
-
     try {
         const [blockedPts, altPts] = await Promise.all([
             fetchOsrmRoute(lat, lng, dest.toLat, dest.toLng),
             fetchDetourRoute(lat, lng, dest.toLat, dest.toLng),
         ]);
-
         try { miniMap.removeLayer(loadingMarker); } catch(e){}
-
-        // Dashed red = congested primary route
-        miniMapLayers.push(L.polyline(blockedPts, {
-            color: '#ef4444', weight: 4, opacity: 0.7, dashArray: '8 5', lineCap: 'round',
-        }).addTo(miniMap));
-
-        // Solid green = alternative detour
-        miniMapLayers.push(L.polyline(altPts, {
-            color: '#22c55e', weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
-        }).addTo(miniMap));
-
-        // Direction arrow at midpoint of alt route
+        miniMapLayers.push(L.polyline(blockedPts, { color: '#ef4444', weight: 4, opacity: 0.7, dashArray: '8 5', lineCap: 'round' }).addTo(miniMap));
+        miniMapLayers.push(L.polyline(altPts, { color: '#22c55e', weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(miniMap));
         const mid = altPts[Math.floor(altPts.length / 2)];
         if (mid) {
             miniMapLayers.push(L.marker(mid, {
-                icon: L.divIcon({
-                    html: `<div style="background:#22c55e;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);">→</div>`,
-                    className:'', iconSize:[22,22], iconAnchor:[11,11],
-                }), interactive: false,
+                icon: L.divIcon({ html: `<div style="background:#22c55e;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);">→</div>`, className:'', iconSize:[22,22], iconAnchor:[11,11] }), interactive: false,
             }).addTo(miniMap));
         }
-
-        // Hotspot ✕ marker
         miniMapLayers.push(L.marker([lat, lng], {
-            icon: L.divIcon({
-                html: `<div style="background:#ef4444;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(239,68,68,.5);border:2px solid #fff;">✕</div>`,
-                className:'', iconSize:[28,28], iconAnchor:[14,14],
-            }),
+            icon: L.divIcon({ html: `<div style="background:#ef4444;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(239,68,68,.5);border:2px solid #fff;">✕</div>`, className:'', iconSize:[28,28], iconAnchor:[14,14] }),
         }).addTo(miniMap).bindTooltip('Congestion point', { permanent:false, direction:'top' }));
-
-        // A / B origin & destination markers
         const originPt = blockedPts[0];
         const destPt   = blockedPts[blockedPts.length - 1];
         [[originPt,'A','#3b82f6'],[destPt,'B','#8b5cf6']].forEach(([pos,label,color]) => {
             if (!pos) return;
             miniMapLayers.push(L.marker(pos, {
-                icon: L.divIcon({
-                    html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);">${label}</div>`,
-                    className:'', iconSize:[22,22], iconAnchor:[11,11],
-                }), interactive: false,
+                icon: L.divIcon({ html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);">${label}</div>`, className:'', iconSize:[22,22], iconAnchor:[11,11] }), interactive: false,
             }).addTo(miniMap));
         });
-
         miniMap.fitBounds(L.latLngBounds([...blockedPts, ...altPts]).pad(0.15));
-
     } catch (err) {
         console.warn('OSRM failed, using fallback:', err.message);
         try { miniMap.removeLayer(loadingMarker); } catch(e){}
@@ -550,7 +522,6 @@ async function drawRouteOnMiniMap(lat, lng, level) {
     }
 }
 
-// ── Geometric fallback if OSRM is unreachable ─────────────────────────────
 function drawFallbackRoute(lat, lng, level) {
     const scale = { severe:0.04, high:0.028, moderate:0.018, low:0.012 };
     const d = scale[level] || 0.02;
@@ -565,18 +536,15 @@ function drawFallbackRoute(lat, lng, level) {
     miniMap.fitBounds(L.latLngBounds([...blocked,...alt]).pad(0.2));
 }
 
-// ── Mini-map init (reused across suggestions) ─────────────────────────────
 function initMiniMap(lat, lng) {
     if (!miniMap) {
-        miniMap = L.map('sr-mini-map', { zoomControl:false, attributionControl:false })
-            .setView([lat, lng], 14);
+        miniMap = L.map('sr-mini-map', { zoomControl:false, attributionControl:false }).setView([lat, lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(miniMap);
     } else {
         miniMap.setView([lat, lng], 14);
     }
 }
 
-// ── Suggestion modal ──────────────────────────────────────────────────────
 function openSuggestModal(lat, lng, level, speed, incidents) {
     currentHotspotLat = lat; currentHotspotLng = lng;
     document.getElementById('sr-thinking').style.display = 'flex';
@@ -596,7 +564,6 @@ function renderSuggestion(lat, lng, level, speed, incidents) {
     const city = NEAR_CITIES[key];
     let routeText = s.route;
     if (city) routeText = `From ${city.from}: ${city.alt}. ${s.route.split('.').slice(1).join('.').trim()}`;
-
     document.getElementById('sr-route-text').textContent = routeText;
     document.getElementById('sr-reason-text').textContent = s.reason;
     document.getElementById('sr-time-saved').textContent = s.timeSaved;
@@ -608,10 +575,8 @@ function renderSuggestion(lat, lng, level, speed, incidents) {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
             </svg>${h}
         </div>`).join('');
-
     document.getElementById('sr-thinking').style.display = 'none';
     document.getElementById('sr-result').classList.add('visible');
-
     setTimeout(async () => {
         initMiniMap(lat, lng);
         miniMap.invalidateSize();
@@ -629,7 +594,6 @@ function closeSuggestModal() {
     setTimeout(() => m.classList.remove('open'), 200);
 }
 
-// ── Main map ──────────────────────────────────────────────────────────────
 const markerColors = { low:'#10b981', moderate:'#fbbf24', high:'#f97316', severe:'#ef4444' };
 
 function makeIcon(level) {
@@ -649,12 +613,10 @@ function initMap() {
     const center = hotspotsData.length
         ? [hotspotsData.reduce((s,h)=>s+h.lat,0)/hotspotsData.length, hotspotsData.reduce((s,h)=>s+h.lng,0)/hotspotsData.length]
         : [12.8797, 121.7740];
-
     map = L.map('hotspot-map', { center: center, zoom: 6 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19
     }).addTo(map);
-
     hotspotsData.forEach((h, i) => {
         const marker = L.marker([h.lat,h.lng], { icon: makeIcon(h.congestion_level) })
             .addTo(map)
@@ -672,7 +634,6 @@ function initMap() {
                     View Details
                 </button>
             </div>`);
-
         if (['severe','high'].includes(h.congestion_level)) {
             L.circle([h.lat,h.lng], {
                 color: markerColors[h.congestion_level], fillColor: markerColors[h.congestion_level],
@@ -681,8 +642,6 @@ function initMap() {
         }
         markers.push(marker);
     });
-
-    // FIX: invalidateSize ensures tiles render after container paints
     setTimeout(() => {
         map.invalidateSize();
         if (hotspotsData.length > 1) {
@@ -712,11 +671,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ── JSON detail modal ─────────────────────────────────────────────────────
 let currentJsonData = null;
 
 function viewHotspotData(lat, lng) {
-    document.getElementById('jsonModal').classList.remove('hidden');
+    const modal = document.getElementById('jsonModal');
+    modal.classList.remove('hidden');
     document.getElementById('loadingMsg').classList.remove('hidden');
     document.getElementById('jsonContent').classList.add('hidden');
     document.getElementById('hotspotLocation').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -750,9 +709,18 @@ function copyJsonToClipboard() {
     navigator.clipboard.writeText(JSON.stringify(currentJsonData,null,2)).then(()=>alert('Copied!')).catch(()=>alert('Failed'));
 }
 
-function closeModal() { document.getElementById('jsonModal').classList.add('hidden'); currentJsonData = null; }
-document.getElementById('jsonModal').addEventListener('click', e => { if(e.target===document.getElementById('jsonModal')) closeModal(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape') { closeModal(); closeSuggestModal(); } });
+function closeModal() {
+    document.getElementById('jsonModal').classList.add('hidden');
+    currentJsonData = null;
+}
+
+document.getElementById('jsonModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('jsonModal')) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeSuggestModal(); }
+});
 </script>
 
 @endsection

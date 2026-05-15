@@ -9,7 +9,7 @@ class Driver extends Model
     protected $fillable = ['name', 'license_number', 'license_expiry_date', 'contact', 'status'];
 
     protected $casts = [
-        'license_expiry_date' => 'date',
+        'license_expiry_date' => 'datetime',
     ];
 
     public function trips() {
